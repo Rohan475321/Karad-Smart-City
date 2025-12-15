@@ -3,222 +3,180 @@ st.set_page_config(page_title="Karad Smart City Analytics", layout="wide")
 
 import pandas as pd
 import plotly.express as px
-import os, time, io
+import os
 
-from reportlab.platypus import SimpleDocTemplate, Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.pagesizes import A4
-
-# ================= CSS (REACT-LIKE FEEL) =================
-st.markdown("""
-<style>
-.card {
-    background: white;
-    padding: 22px;
-    border-radius: 18px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-    transition: transform 0.2s ease;
-    text-align: center;
-}
-.card:hover {
-    transform: scale(1.03);
-}
-.nav {
-    display: flex;
-    gap: 25px;
-    font-size: 18px;
-    font-weight: 600;
-}
-.insight {
-    background:#EFF6FF;
-    padding:18px;
-    border-left:6px solid #2563EB;
-    border-radius:14px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ================= LOAD DATA =================
+# -------------------- LOAD DATA --------------------
 DATA_PATH = "data"
 traffic = pd.read_csv(os.path.join(DATA_PATH, "traffic_accidents.csv"))
 services = pd.read_csv(os.path.join(DATA_PATH, "public_services.csv"))
 business = pd.read_csv(os.path.join(DATA_PATH, "businesses.csv"))
 social = pd.read_csv(os.path.join(DATA_PATH, "social_indicators.csv"))
 
-# ================= GLOBAL STATE =================
-if "page" not in st.session_state:
-    st.session_state.page = "Overview"
-
-# ================= HERO =================
+# -------------------- HERO SECTION --------------------
 st.markdown("""
 <div style="
 background: linear-gradient(135deg,#2563EB,#1E3A8A);
 padding:35px;
-border-radius:22px;
+border-radius:20px;
 color:white;
 ">
 <h1>🏙️ Karad Smart City Analytics</h1>
 <p style="font-size:18px;">
-Interactive • Predictive • Decision-Driven Dashboard
+Public Data • Business Intelligence • Social Impact
 </p>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# ================= NAVBAR (REACT STYLE) =================
-cols = st.columns(6)
-pages = ["Overview", "Traffic", "Services", "Business", "Predictive", "What-If"]
+# -------------------- SIDEBAR --------------------
+st.sidebar.markdown("""
+<h2 style="color:#2563EB;">📊 Dashboard Controls</h2>
+<hr>
+""", unsafe_allow_html=True)
 
-for i, p in enumerate(pages):
-    if cols[i].button(p, use_container_width=True):
-        st.session_state.page = p
-        st.toast(f"Switched to {p} 🚀")
+ward = st.sidebar.selectbox(
+    "📍 Select Ward",
+    ["All"] + sorted(traffic["ward"].unique())
+)
 
-page = st.session_state.page
-st.markdown("<hr>", unsafe_allow_html=True)
+module = st.sidebar.radio(
+    "🧭 Select Module",
+    [
+        "🏙️ City Overview",
+        "🚦 Traffic Analysis",
+        "🚰 Public Services",
+        "🏪 Business Intelligence",
+        "❤️ Social Impact"
+    ]
+)
 
-# ================= COMPONENTS =================
-def animated_kpi(title, value, icon):
-    placeholder = st.empty()
-    step = max(1, int(value/20)) if value > 0 else 1
-    for i in range(0, int(value)+1, step):
-        placeholder.markdown(f"""
-        <div class="card">
-            <h2>{icon} {i}</h2>
-            <p style="color:#475569;">{title}</p>
-        </div>
-        """, unsafe_allow_html=True)
-        time.sleep(0.015)
+# -------------------- FILTER --------------------
+def filter_df(df):
+    if ward == "All":
+        return df
+    return df[df["ward"] == ward]
 
-def generate_pdf():
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
-    styles = getSampleStyleSheet()
-    content = []
+traffic_f = filter_df(traffic)
+services_f = filter_df(services)
+business_f = filter_df(business)
+social_f = filter_df(social)
 
-    content.append(Paragraph("<b>Karad Smart City Analytics Report</b>", styles["Title"]))
-    content.append(Paragraph("<br/>", styles["Normal"]))
-    content.append(Paragraph(f"Total Accidents: {len(traffic)}", styles["Normal"]))
-    content.append(Paragraph(f"Total Businesses: {business['count'].sum()}", styles["Normal"]))
-    content.append(Paragraph(
-        f"Average Safety Index: {round(social['safety_index'].mean(),1)}",
-        styles["Normal"]
-    ))
-
-    doc.build(content)
-    buffer.seek(0)
-    return buffer
+# -------------------- KPI CARD FUNCTION --------------------
+def kpi_card(title, value, icon):
+    st.markdown(f"""
+    <div style="
+        background:white;
+        padding:22px;
+        border-radius:18px;
+        box-shadow:0 6px 14px rgba(0,0,0,0.08);
+        text-align:center;
+    ">
+        <h2>{icon} {value}</h2>
+        <p style="color:#475569;">{title}</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ======================================================
-# 🏙️ OVERVIEW
+# 🏙️ CITY OVERVIEW
 # ======================================================
-if page == "Overview":
-    st.subheader("📌 City Snapshot")
+if module == "🏙️ City Overview":
+
+    st.markdown("## 📌 City Health Snapshot")
 
     c1, c2, c3, c4 = st.columns(4)
-    with c1: animated_kpi("Total Accidents", len(traffic), "🚦")
-    with c2: animated_kpi("Businesses", business["count"].sum(), "🏪")
-    with c3: animated_kpi("Water Issues", services["water_issues"].sum(), "🚰")
-    with c4: animated_kpi("Safety Index", round(social["safety_index"].mean(),1), "🛡️")
+    with c1: kpi_card("Total Accidents", len(traffic_f), "🚦")
+    with c2: kpi_card("Total Businesses", business_f["count"].sum(), "🏪")
+    with c3: kpi_card("Water Issues", services_f["water_issues"].sum(), "🚰")
+    with c4: kpi_card("Avg Safety Index", round(social_f["safety_index"].mean(),1), "🛡️")
+
+    st.markdown("<br>", unsafe_allow_html=True)
 
     acc = traffic.groupby("ward").size().reset_index(name="Accidents")
-    fig = px.bar(acc, x="ward", y="Accidents")
+    fig = px.bar(acc, x="ward", y="Accidents", title="Accidents by Ward")
+    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)")
     st.plotly_chart(fig, use_container_width=True)
 
-    st.download_button(
-        "⬇️ Download PDF Report",
-        data=generate_pdf(),
-        file_name="Karad_Smart_City_Report.pdf",
-        mime="application/pdf"
-    )
-
 # ======================================================
-# 🚦 TRAFFIC
+# 🚦 TRAFFIC ANALYSIS
 # ======================================================
-elif page == "Traffic":
-    st.subheader("🚦 Traffic & Accident Patterns")
+elif module == "🚦 Traffic Analysis":
 
-    chart_type = st.radio("View as", ["Bar", "Line"], horizontal=True)
+    st.markdown("## 🚦 Traffic & Accident Patterns")
 
-    if chart_type == "Bar":
-        fig = px.histogram(traffic, x="hour")
-    else:
-        fig = px.line(traffic.groupby("hour").size().reset_index(name="count"),
-                      x="hour", y="count")
+    c1, c2 = st.columns(2)
 
-    st.plotly_chart(fig, use_container_width=True)
+    with c1:
+        fig = px.histogram(traffic_f, x="hour", title="Accidents by Hour")
+        fig.update_layout(plot_bgcolor="rgba(0,0,0,0)")
+        st.plotly_chart(fig, use_container_width=True)
+
+    with c2:
+        fig = px.pie(traffic_f, names="vehicle_type", title="Vehicle Type Involvement")
+        st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("""
-    <div class="insight">
-    <b>Insight:</b> Accident frequency spikes between 6–10 PM.
+    <div style="
+    background:#EFF6FF;
+    padding:18px;
+    border-left:6px solid #2563EB;
+    border-radius:12px;
+    ">
+    <b>📌 Insight:</b>  
+    Majority of accidents occur during evening peak hours indicating traffic congestion risk.
     </div>
     """, unsafe_allow_html=True)
 
 # ======================================================
-# 🚰 SERVICES
+# 🚰 PUBLIC SERVICES
 # ======================================================
-elif page == "Services":
-    st.subheader("🚰 Public Services Performance")
+elif module == "🚰 Public Services":
 
-    show = st.toggle("Show Detailed Chart")
+    st.markdown("## 🚰 Public Service Performance")
 
-    if show:
-        fig = px.bar(services, x="ward", y="water_issues")
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("Toggle ON to load chart")
-
-# ======================================================
-# 🏪 BUSINESS
-# ======================================================
-elif page == "Business":
-    st.subheader("🏪 Local Business Intelligence")
-
-    category = st.selectbox(
-        "Filter by Business Type",
-        ["All"] + sorted(business["business_type"].unique())
+    fig = px.bar(
+        services_f,
+        x="ward",
+        y="water_issues",
+        title="Water Supply Issues by Ward"
     )
-
-    df = business if category == "All" else business[business["business_type"] == category]
-
-    fig = px.bar(df, x="ward", y="count", color="business_type")
+    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)")
     st.plotly_chart(fig, use_container_width=True)
 
 # ======================================================
-# 📈 PREDICTIVE
+# 🏪 BUSINESS INTELLIGENCE
 # ======================================================
-elif page == "Predictive":
-    st.subheader("📈 Predictive & Prescriptive Insights")
+elif module == "🏪 Business Intelligence":
 
-    st.success("🔮 Accident risk increases with traffic density and poor weather.")
-    st.warning("⚠️ High-risk wards require enforcement & infrastructure upgrades.")
+    st.markdown("## 🏪 Local Business Intelligence")
+
+    fig = px.bar(
+        business_f,
+        x="ward",
+        y="count",
+        color="business_type",
+        title="Business Density by Ward"
+    )
+    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)")
+    st.plotly_chart(fig, use_container_width=True)
 
 # ======================================================
-# 🧪 WHAT-IF
+# ❤️ SOCIAL IMPACT
 # ======================================================
-elif page == "What-If":
-    st.subheader("🧪 What-If Accident Risk Simulation")
+elif module == "❤️ Social Impact":
 
-    traffic_level = st.slider("Traffic Density", 1, 10, 5)
-    weather = st.selectbox("Weather", ["Clear", "Rainy", "Foggy"])
-    police = st.slider("Police Presence", 1, 10, 5)
+    st.markdown("## ❤️ Social & Safety Indicators")
 
-    risk = traffic_level * 2
-    if weather == "Rainy": risk += 5
-    if weather == "Foggy": risk += 7
-    risk -= police
+    fig = px.line(
+        social_f,
+        x="ward",
+        y="safety_index",
+        markers=True,
+        title="Safety Index by Ward"
+    )
+    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)")
+    st.plotly_chart(fig, use_container_width=True)
 
-    label = "🟢 Low"
-    if risk > 15: label = "🔴 High"
-    elif risk > 8: label = "🟠 Medium"
-
-    st.markdown(f"""
-    <div class="card">
-        <h2>Predicted Risk: {label}</h2>
-    </div>
-    """, unsafe_allow_html=True)
-
-# ================= FOOTER =================
+# -------------------- FOOTER --------------------
 st.markdown("<hr>", unsafe_allow_html=True)
-st.caption("🚀 Karad Smart City Analytics • React-like Interactive Streamlit App")
+st.caption("🚀 Karad Smart City Analytics • Built with Streamlit & Python")
