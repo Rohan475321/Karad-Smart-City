@@ -1,0 +1,14 @@
+ward,latitude,longitude,hour,severity,vehicle_type,month
+Malkapur,17.274,74.182,19,3,Bike,Jan
+Malkapur,17.276,74.185,21,4,Car,Feb
+Shaniwar Peth,17.28,74.19,18,2,Bike,Mar
+Vidyanagar,17.265,74.175,20,5,Truck,Jan
+Sadar Bazar,17.272,74.188,22,4,Car,Apr
+Budhwar Peth,17.278,74.181,17,3,Bike,May
+Raviwar Peth,17.283,74.192,16,2,Auto,Jun
+Malkapur,17.275,74.183,8,1,Bike,Jul
+Vidyanagar,17.266,74.176,23,5,Truck,Aug
+Sadar Bazar,17.273,74.189,19,4,Car,Sep
+Shaniwar Peth,17.281,74.191,20,3,Bike,Oct
+Budhwar Peth,17.279,74.182,18,2,Auto,Nov
+Raviwar Peth,17.284,74.193,21,4,Car,Dec
