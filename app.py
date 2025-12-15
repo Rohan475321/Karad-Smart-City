@@ -1,148 +1,182 @@
 import streamlit as st
+st.set_page_config(page_title="Karad Smart City Analytics", layout="wide")
+
 import pandas as pd
 import plotly.express as px
 import os
 
-st.set_page_config(page_title="Karad Smart City Analytics", layout="wide")
-st.set_option("client.showErrorDetails", True)
-
-st.title("🏙️ Karad Smart City Analytics Dashboard")
-st.markdown("**Public Data | Business | Social Impact**")
-st.markdown("---")
-
-# ---------------- SAFE DATA LOADING ----------------
+# -------------------- LOAD DATA --------------------
 DATA_PATH = "data"
+traffic = pd.read_csv(os.path.join(DATA_PATH, "traffic_accidents.csv"))
+services = pd.read_csv(os.path.join(DATA_PATH, "public_services.csv"))
+business = pd.read_csv(os.path.join(DATA_PATH, "businesses.csv"))
+social = pd.read_csv(os.path.join(DATA_PATH, "social_indicators.csv"))
 
-try:
-    traffic = pd.read_csv(os.path.join(DATA_PATH, "traffic_accidents.csv"))
-    services = pd.read_csv(os.path.join(DATA_PATH, "public_services.csv"))
-    business = pd.read_csv(os.path.join(DATA_PATH, "businesses.csv"))
-    social = pd.read_csv(os.path.join(DATA_PATH, "social_indicators.csv"))
-except Exception as e:
-    st.error("❌ Error loading CSV files")
-    st.exception(e)
-    st.stop()
+# -------------------- HERO SECTION --------------------
+st.markdown("""
+<div style="
+background: linear-gradient(135deg,#2563EB,#1E3A8A);
+padding:35px;
+border-radius:20px;
+color:white;
+">
+<h1>🏙️ Karad Smart City Analytics</h1>
+<p style="font-size:18px;">
+Public Data • Business Intelligence • Social Impact
+</p>
+</div>
+""", unsafe_allow_html=True)
 
-# ---------------- SIDEBAR ----------------
-st.sidebar.header("📊 Controls")
+st.markdown("<br>", unsafe_allow_html=True)
 
-ward_list = sorted(traffic["ward"].unique())
-selected_ward = st.sidebar.selectbox("Select Ward", ["All"] + ward_list)
+# -------------------- SIDEBAR --------------------
+st.sidebar.markdown("""
+<h2 style="color:#2563EB;">📊 Dashboard Controls</h2>
+<hr>
+""", unsafe_allow_html=True)
+
+ward = st.sidebar.selectbox(
+    "📍 Select Ward",
+    ["All"] + sorted(traffic["ward"].unique())
+)
 
 module = st.sidebar.radio(
-    "Select Module",
+    "🧭 Select Module",
     [
-        "City Overview",
-        "Traffic & Accident Analysis",
-        "Public Services",
-        "Business Intelligence",
-        "Social Impact"
+        "🏙️ City Overview",
+        "🚦 Traffic Analysis",
+        "🚰 Public Services",
+        "🏪 Business Intelligence",
+        "❤️ Social Impact"
     ]
 )
 
-# ---------------- FILTER ----------------
+# -------------------- FILTER --------------------
 def filter_df(df):
-    if selected_ward == "All":
+    if ward == "All":
         return df
-    return df[df["ward"] == selected_ward]
+    return df[df["ward"] == ward]
 
 traffic_f = filter_df(traffic)
 services_f = filter_df(services)
 business_f = filter_df(business)
 social_f = filter_df(social)
 
-# ---------------- CITY OVERVIEW ----------------
-if module == "City Overview":
+# -------------------- KPI CARD FUNCTION --------------------
+def kpi_card(title, value, icon):
+    st.markdown(f"""
+    <div style="
+        background:white;
+        padding:22px;
+        border-radius:18px;
+        box-shadow:0 6px 14px rgba(0,0,0,0.08);
+        text-align:center;
+    ">
+        <h2>{icon} {value}</h2>
+        <p style="color:#475569;">{title}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ======================================================
+# 🏙️ CITY OVERVIEW
+# ======================================================
+if module == "🏙️ City Overview":
+
+    st.markdown("## 📌 City Health Snapshot")
 
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Total Accidents", len(traffic_f))
-    c2.metric("Total Businesses", business_f["count"].sum())
-    c3.metric("Water Issues", services_f["water_issues"].sum())
-    c4.metric("Avg Safety Index", round(social_f["safety_index"].mean(), 1))
+    with c1: kpi_card("Total Accidents", len(traffic_f), "🚦")
+    with c2: kpi_card("Total Businesses", business_f["count"].sum(), "🏪")
+    with c3: kpi_card("Water Issues", services_f["water_issues"].sum(), "🚰")
+    with c4: kpi_card("Avg Safety Index", round(social_f["safety_index"].mean(),1), "🛡️")
 
-    st.markdown("---")
+    st.markdown("<br>", unsafe_allow_html=True)
 
-    acc = traffic.groupby("ward").size().reset_index(name="accidents")
-    fig = px.bar(acc, x="ward", y="accidents", title="Accidents by Ward")
+    acc = traffic.groupby("ward").size().reset_index(name="Accidents")
+    fig = px.bar(acc, x="ward", y="Accidents", title="Accidents by Ward")
+    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)")
     st.plotly_chart(fig, use_container_width=True)
 
-# ---------------- TRAFFIC ----------------
-elif module == "Traffic & Accident Analysis":
+# ======================================================
+# 🚦 TRAFFIC ANALYSIS
+# ======================================================
+elif module == "🚦 Traffic Analysis":
 
-    st.subheader("🚦 Traffic & Accident Analysis")
+    st.markdown("## 🚦 Traffic & Accident Patterns")
 
-    if traffic_f.empty:
-        st.warning("No data available for this ward.")
-        st.stop()
+    c1, c2 = st.columns(2)
 
-    col1, col2 = st.columns(2)
+    with c1:
+        fig = px.histogram(traffic_f, x="hour", title="Accidents by Hour")
+        fig.update_layout(plot_bgcolor="rgba(0,0,0,0)")
+        st.plotly_chart(fig, use_container_width=True)
 
-    with col1:
-        fig1 = px.histogram(
-            traffic_f,
-            x="hour",
-            title="Accidents by Hour"
-        )
-        st.plotly_chart(fig1, use_container_width=True)
+    with c2:
+        fig = px.pie(traffic_f, names="vehicle_type", title="Vehicle Type Involvement")
+        st.plotly_chart(fig, use_container_width=True)
 
-    with col2:
-        fig2 = px.pie(
-            traffic_f,
-            names="vehicle_type",
-            title="Accidents by Vehicle Type"
-        )
-        st.plotly_chart(fig2, use_container_width=True)
+    st.markdown("""
+    <div style="
+    background:#EFF6FF;
+    padding:18px;
+    border-left:6px solid #2563EB;
+    border-radius:12px;
+    ">
+    <b>📌 Insight:</b>  
+    Majority of accidents occur during evening peak hours indicating traffic congestion risk.
+    </div>
+    """, unsafe_allow_html=True)
 
-    st.markdown("### 📍 Accident Locations")
+# ======================================================
+# 🚰 PUBLIC SERVICES
+# ======================================================
+elif module == "🚰 Public Services":
 
-    fig3 = px.scatter_mapbox(
-        traffic_f,
-        lat="latitude",
-        lon="longitude",
-        size="severity",
-        color="severity",
-        zoom=11,
-        center={"lat": 17.274, "lon": 74.182},
-        mapbox_style="open-street-map",
-        hover_name="ward"
-    )
-
-    st.plotly_chart(fig3, use_container_width=True)
-
-# ---------------- PUBLIC SERVICES ----------------
-elif module == "Public Services":
+    st.markdown("## 🚰 Public Service Performance")
 
     fig = px.bar(
         services_f,
         x="ward",
         y="water_issues",
-        title="Water Issues by Ward"
+        title="Water Supply Issues by Ward"
     )
+    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)")
     st.plotly_chart(fig, use_container_width=True)
 
-# ---------------- BUSINESS ----------------
-elif module == "Business Intelligence":
+# ======================================================
+# 🏪 BUSINESS INTELLIGENCE
+# ======================================================
+elif module == "🏪 Business Intelligence":
+
+    st.markdown("## 🏪 Local Business Intelligence")
 
     fig = px.bar(
         business_f,
         x="ward",
         y="count",
         color="business_type",
-        title="Business Distribution"
+        title="Business Density by Ward"
     )
+    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)")
     st.plotly_chart(fig, use_container_width=True)
 
-# ---------------- SOCIAL ----------------
-elif module == "Social Impact":
+# ======================================================
+# ❤️ SOCIAL IMPACT
+# ======================================================
+elif module == "❤️ Social Impact":
+
+    st.markdown("## ❤️ Social & Safety Indicators")
 
     fig = px.line(
         social_f,
         x="ward",
         y="safety_index",
-        title="Safety Index by Ward",
-        markers=True
+        markers=True,
+        title="Safety Index by Ward"
     )
+    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)")
     st.plotly_chart(fig, use_container_width=True)
 
-st.markdown("---")
-st.caption("Karad Smart City Analytics | Streamlit")
+# -------------------- FOOTER --------------------
+st.markdown("<hr>", unsafe_allow_html=True)
+st.caption("🚀 Karad Smart City Analytics • Built with Streamlit & Python")
