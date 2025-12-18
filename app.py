@@ -16,7 +16,6 @@ social = pd.read_csv(os.path.join(DATA_PATH, "social_indicators.csv"))
 map_df = traffic[["latitude", "longitude"]].copy()
 map_df.columns = ["17.2850", "74.1840"]
 
-
 # -------------------- HERO SECTION --------------------
 st.markdown("""
 <div style="
@@ -100,18 +99,6 @@ if module == "🏙️ City Overview":
     # -------- MAP --------
     st.markdown("### 🗺️ Project Location – Karad City")
     st.map(map_df, zoom=11)
-    # -------------------- MAP DATA --------------------
-map_df = traffic[["latitude", "longitude"]].copy()
-map_df.columns = ["lat", "lon"]
-
-# Add Karad city center as reference point
-karad_center = pd.DataFrame({
-    "lat": [17.2850],
-    "lon": [74.1840]
-})
-
-map_df = pd.concat([map_df, karad_center], ignore_index=True)
-
 
     st.markdown("""
     <div style="
@@ -218,5 +205,3 @@ elif module == "❤️ Social Impact":
 # -------------------- FOOTER --------------------
 st.markdown("<hr>", unsafe_allow_html=True)
 st.caption("🚀 Karad Smart City Analytics • Built with Streamlit & Python")
-
-
