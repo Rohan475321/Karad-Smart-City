@@ -4,6 +4,7 @@ st.set_page_config(page_title="Karad Smart City Analytics", layout="wide")
 import pandas as pd
 import plotly.express as px
 import os
+import pydeck as pdk
 
 # -------------------- LOAD DATA --------------------
 DATA_PATH = "data"
@@ -12,16 +13,27 @@ services = pd.read_csv(os.path.join(DATA_PATH, "public_services.csv"))
 business = pd.read_csv(os.path.join(DATA_PATH, "businesses.csv"))
 social = pd.read_csv(os.path.join(DATA_PATH, "social_indicators.csv"))
 
-# -------------------- MAP DATA --------------------
-map_df = traffic[["latitude", "longitude"]].copy()
+# -------------------- KARAD LOCATION (MANUAL) --------------------
+KARAD_LAT = 17.2850
+KARAD_LON = 74.1840
 
-# Add Karad city center as reference point
-karad_center = pd.DataFrame({
-    "latitude": [17.28],
-    "longitude": [74.18]
+# Create demo map points around Karad (NO CSV GPS REQUIRED)
+map_df = pd.DataFrame({
+    "latitude": [
+        KARAD_LAT,
+        KARAD_LAT + 0.01,
+        KARAD_LAT - 0.01,
+        KARAD_LAT + 0.005,
+        KARAD_LAT - 0.005
+    ],
+    "longitude": [
+        KARAD_LON,
+        KARAD_LON + 0.01,
+        KARAD_LON - 0.01,
+        KARAD_LON - 0.005,
+        KARAD_LON + 0.005
+    ]
 })
-
-map_df = pd.concat([map_df, karad_center], ignore_index=True)
 
 # -------------------- HERO SECTION --------------------
 st.markdown("""
@@ -88,6 +100,32 @@ def kpi_card(title, value, icon):
     </div>
     """, unsafe_allow_html=True)
 
+# -------------------- MAP FUNCTION (PYDECK) --------------------
+def show_karad_map():
+    view_state = pdk.ViewState(
+        latitude=KARAD_LAT,
+        longitude=KARAD_LON,
+        zoom=12,
+        pitch=0
+    )
+
+    layer = pdk.Layer(
+        "ScatterplotLayer",
+        data=map_df,
+        get_position='[longitude, latitude]',
+        get_radius=120,
+        get_fill_color=[37, 99, 235, 180],
+        pickable=True
+    )
+
+    deck = pdk.Deck(
+        layers=[layer],
+        initial_view_state=view_state,
+        map_style="mapbox://styles/mapbox/light-v9"
+    )
+
+    st.pydeck_chart(deck)
+
 # ======================================================
 # 🏙️ CITY OVERVIEW
 # ======================================================
@@ -101,24 +139,8 @@ if module == "🏙️ City Overview":
     with c3: kpi_card("Water Issues", services_f["water_issues"].sum(), "🚰")
     with c4: kpi_card("Avg Safety Index", round(social_f["safety_index"].mean(),1), "🛡️")
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # -------- MAP --------
     st.markdown("### 🗺️ Project Location – Karad City")
-    st.map(map_df, zoom=11)
-
-    st.markdown("""
-    <div style="
-    background:#EFF6FF;
-    padding:16px;
-    border-left:6px solid #2563EB;
-    border-radius:12px;
-    ">
-    <b>📌 Insight:</b><br>
-    This map visualizes accident locations across Karad,
-    helping identify high-risk zones spatially.
-    </div>
-    """, unsafe_allow_html=True)
+    show_karad_map()
 
     acc = traffic.groupby("ward").size().reset_index(name="Accidents")
     fig = px.bar(acc, x="ward", y="Accidents", title="Accidents by Ward")
@@ -132,9 +154,8 @@ elif module == "🚦 Traffic Analysis":
 
     st.markdown("## 🚦 Traffic & Accident Patterns")
 
-    # -------- MAP --------
-    st.markdown("### 🚦 Accident Locations Map")
-    st.map(map_df, zoom=12)
+    st.markdown("### 🚦 Accident Locations (Karad)")
+    show_karad_map()
 
     c1, c2 = st.columns(2)
 
@@ -146,18 +167,6 @@ elif module == "🚦 Traffic Analysis":
     with c2:
         fig = px.pie(traffic_f, names="vehicle_type", title="Vehicle Type Involvement")
         st.plotly_chart(fig, use_container_width=True)
-
-    st.markdown("""
-    <div style="
-    background:#EFF6FF;
-    padding:18px;
-    border-left:6px solid #2563EB;
-    border-radius:12px;
-    ">
-    <b>📌 Insight:</b>  
-    Majority of accidents occur during evening peak hours indicating traffic congestion risk.
-    </div>
-    """, unsafe_allow_html=True)
 
 # ======================================================
 # 🚰 PUBLIC SERVICES
@@ -212,5 +221,3 @@ elif module == "❤️ Social Impact":
 # -------------------- FOOTER --------------------
 st.markdown("<hr>", unsafe_allow_html=True)
 st.caption("🚀 Karad Smart City Analytics • Built with Streamlit & Python")
-
-
