@@ -12,6 +12,10 @@ services = pd.read_csv(os.path.join(DATA_PATH, "public_services.csv"))
 business = pd.read_csv(os.path.join(DATA_PATH, "businesses.csv"))
 social = pd.read_csv(os.path.join(DATA_PATH, "social_indicators.csv"))
 
+# -------------------- MAP DATA --------------------
+map_df = traffic[["latitude", "longitude"]].copy()
+map_df.columns = ["lat", "lon"]
+
 # -------------------- HERO SECTION --------------------
 st.markdown("""
 <div style="
@@ -92,6 +96,23 @@ if module == "🏙️ City Overview":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
+    # -------- MAP --------
+    st.markdown("### 🗺️ Project Location – Karad City")
+    st.map(map_df, zoom=11)
+
+    st.markdown("""
+    <div style="
+    background:#EFF6FF;
+    padding:16px;
+    border-left:6px solid #2563EB;
+    border-radius:12px;
+    ">
+    <b>📌 Insight:</b><br>
+    This map visualizes accident locations across Karad,
+    helping identify high-risk zones spatially.
+    </div>
+    """, unsafe_allow_html=True)
+
     acc = traffic.groupby("ward").size().reset_index(name="Accidents")
     fig = px.bar(acc, x="ward", y="Accidents", title="Accidents by Ward")
     fig.update_layout(plot_bgcolor="rgba(0,0,0,0)")
@@ -103,6 +124,10 @@ if module == "🏙️ City Overview":
 elif module == "🚦 Traffic Analysis":
 
     st.markdown("## 🚦 Traffic & Accident Patterns")
+
+    # -------- MAP --------
+    st.markdown("### 🚦 Accident Locations Map")
+    st.map(map_df, zoom=12)
 
     c1, c2 = st.columns(2)
 
