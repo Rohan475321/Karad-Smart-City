@@ -17,8 +17,8 @@ map_df = traffic[["latitude", "longitude"]].copy()
 
 # Add Karad city center as reference point
 karad_center = pd.DataFrame({
-    "latitude": [17.2850],
-    "longitude": [74.1840]
+    "latitude": [17.28],
+    "longitude": [74.18]
 })
 
 map_df = pd.concat([map_df, karad_center], ignore_index=True)
@@ -212,4 +212,5 @@ elif module == "❤️ Social Impact":
 # -------------------- FOOTER --------------------
 st.markdown("<hr>", unsafe_allow_html=True)
 st.caption("🚀 Karad Smart City Analytics • Built with Streamlit & Python")
+
 
