@@ -14,7 +14,7 @@ social = pd.read_csv(os.path.join(DATA_PATH, "social_indicators.csv"))
 
 # -------------------- MAP DATA --------------------
 map_df = traffic[["latitude", "longitude"]].copy()
-map_df.columns = ["lat", "lon"]
+map_df.columns = ["17.2850", "74.1840"]
 
 
 # -------------------- HERO SECTION --------------------
