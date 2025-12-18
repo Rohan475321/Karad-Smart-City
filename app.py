@@ -15,6 +15,10 @@ social = pd.read_csv(os.path.join(DATA_PATH, "social_indicators.csv"))
 # -------------------- MAP DATA --------------------
 map_df = traffic[["latitude", "longitude"]].copy()
 map_df.columns = ["lat", "lon"]
+# -------------------- KARAD LOCATION --------------------
+KARAD_LAT = 17.2850
+KARAD_LON = 74.1840
+
 
 # -------------------- HERO SECTION --------------------
 st.markdown("""
@@ -205,3 +209,4 @@ elif module == "❤️ Social Impact":
 # -------------------- FOOTER --------------------
 st.markdown("<hr>", unsafe_allow_html=True)
 st.caption("🚀 Karad Smart City Analytics • Built with Streamlit & Python")
+
